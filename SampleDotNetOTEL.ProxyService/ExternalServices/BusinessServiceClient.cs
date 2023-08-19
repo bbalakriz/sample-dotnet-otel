@@ -9,15 +9,6 @@ public sealed class BusinessServiceClient
         _httpClient = httpClient;
     }
     
-    public async Task<string> GetWeatherAsync()
-    {
-        var response = await _httpClient.GetAsync("weather");
-        response.EnsureSuccessStatusCode();
-        
-        var content = await response.Content.ReadAsStringAsync();
-        return content;
-    }
-    
     public async Task<string> GetHelloAsync()
     {
         var response = await _httpClient.GetAsync("hello");

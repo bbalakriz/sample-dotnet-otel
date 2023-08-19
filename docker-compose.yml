@@ -62,26 +62,6 @@ services:
     networks:
       - backend
 
-  postgres:
-    image: postgres:10.7
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=admin
-    networks:
-      - backend
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=password
-      - RABBITMQ_DEFAULT_VHOST=sample-dotnet-otel
-    ports:
-      - "127.0.0.1:5672:5672"
-      - "127.0.0.1:15672:15672"
-    networks:
-      - backend
-
   proxy-service:
     build:
       dockerfile: SampleDotNetOTEL.ProxyService/Dockerfile
@@ -89,17 +69,12 @@ services:
     image: sample-dotnet-otel-proxy-service
     environment:
       - ServiceName=proxy-service
-      - BusinessServiceBaseUrl=http://business-service-1;http://business-service-2;http://business-service-3;
-      - OTEL_EXPORTER_JAEGER_AGENT_HOST=jaeger
-      - OTEL_EXPORTER_JAEGER_AGENT_PORT=6831
-      - OTEL_EXPORTER_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - BusinessServiceBaseUrl=http://business-service-1;http://business-service-1;http://business-service-1;
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
     ports:
       - "127.0.0.1:8080:80"
     networks:
       - backend
-    depends_on:
-      - rabbitmq
   
   business-service-1:
     build:
@@ -108,59 +83,11 @@ services:
     image: sample-dotnet-otel-business-service
     environment:
       - ServiceName=business-service-1
-      - ConnectionStrings__Default=Server=postgres;Port=5432;Database=weather;User Id=postgres;Password=admin;
-      - ErrorRate=0.95
-      - OTEL_EXPORTER_JAEGER_AGENT_HOST=jaeger
-      - OTEL_EXPORTER_JAEGER_AGENT_PORT=6831
-      - OTEL_EXPORTER_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
     ports:
       - "127.0.0.1:8081:80"
     networks:
       - backend
-    depends_on:
-      - postgres
-      - rabbitmq
-  
-  business-service-2:
-    build:
-      dockerfile: SampleDotNetOTEL.BusinessService/Dockerfile
-      context: .
-    image: sample-dotnet-otel-business-service
-    environment:
-      - ServiceName=business-service-2
-      - ConnectionStrings__Default=Server=postgres;Port=5432;Database=weather;User Id=postgres;Password=admin;
-      - OTEL_EXPORTER_JAEGER_AGENT_HOST=jaeger
-      - OTEL_EXPORTER_JAEGER_AGENT_PORT=6831
-      - OTEL_EXPORTER_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-    ports:
-      - "127.0.0.1:8082:80"
-    networks:
-      - backend
-    depends_on:
-      - postgres
-      - rabbitmq
-  
-  business-service-3:
-    build:
-      dockerfile: SampleDotNetOTEL.BusinessService/Dockerfile
-      context: .
-    image: sample-dotnet-otel-business-service
-    environment:
-      - ServiceName=business-service-3
-      - ConnectionStrings__Default=Server=postgres;Port=5432;Database=weather;User Id=postgres;Password=admin;
-      - OTEL_EXPORTER_JAEGER_AGENT_HOST=jaeger
-      - OTEL_EXPORTER_JAEGER_AGENT_PORT=6831
-      - OTEL_EXPORTER_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-    ports:
-      - "127.0.0.1:8083:80"
-    networks:
-      - backend
-    depends_on:
-      - postgres
-      - rabbitmq
   
   spammer:
     image: alpine/curl
@@ -170,19 +97,14 @@ services:
       - |
         sleep 5
         while true; do
-          curl -s "http://proxy-service/weather" || true
           curl -s "http://proxy-service/hello" || true
-          curl -s "http://proxy-service/hello?name=John" || true
-          curl -s -X POST -H "Content-Type: application/json" -d "{\"message\": \"This is a test message send thought RabbitMQ ($$(date))\"}" "http://proxy-service/messages" || true
+          curl -s "http://proxy-service/test" || true
           sleep 0.5
         done
     networks:
       - backend
     depends_on:
       - proxy-service
-      - business-service-1
-      - business-service-2
-      - business-service-3
 
 networks:
   backend:

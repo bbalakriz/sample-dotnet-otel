@@ -6,8 +6,6 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using SampleDotNetOTEL.BusinessService.Controllers;
-using SampleDotNetOTEL.BusinessService.Persistence;
-using SampleDotNetOTEL.BusinessService.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,13 +28,6 @@ builder.Services.AddControllers();
 
 builder.Services.AddHttpLogging(o => o.LoggingFields = HttpLoggingFields.All);
 
-builder.Services.AddSingleton(new ErrorResponsePolicy(builder.Configuration.GetValue<double>("ErrorRate")));
-
-builder.Services.AddDbContext<WeatherDbContext>(b => b.UseNpgsql(builder.Configuration["ConnectionStrings:Default"]));
-builder.Services.AddTransient<WeatherDbInitializer>();
-
-builder.Services.AddHostedService<MessagesProcessingBackgroundService>();
-
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(b =>
     {
@@ -49,7 +40,6 @@ builder.Services.AddOpenTelemetry()
         })
         .AddHttpClientInstrumentation()
         .AddEntityFrameworkCoreInstrumentation()
-        .AddSource(MessagesProcessingBackgroundService.TraceActivityName)
         .AddOtlpExporter())
     .WithMetrics(b => b
         .AddAspNetCoreInstrumentation(o =>
@@ -62,16 +52,78 @@ builder.Services.AddOpenTelemetry()
         .AddPrometheusExporter())
     .StartWithHost();
 
+// Configure logging
+// builder.Logging.AddOpenTelemetry(builder =>
+// {
+//     builder.IncludeFormattedMessage = true;
+//     builder.IncludeScopes = true;
+//     builder.ParseStateValues = true;
+//     builder.AddOtlpExporter(options => options.Endpoint = new Uri("http://otel-collector:4317"));
+// });
+
 var app = builder.Build();
 
-using var scope = app.Services.CreateScope();
-{
-    var dbSeeder = scope.ServiceProvider.GetRequiredService<WeatherDbInitializer>();
-    await dbSeeder.InitAsync();
-}
+// app.MapGet("/test", (ILogger<Program> logger) =>
+// {
+//     logger.LogInformation("some extra logging from program.cs");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+//     logger.LogInformation("********************************");
+
+//     return Results.Ok("Done");
+// });
 
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
 app.UseHttpLogging();
 app.UseDeveloperExceptionPage();
 app.MapControllers();
+
+
+var appResourceBuilder = ResourceBuilder.CreateDefault()
+    .AddService("dotnet-web-simple", "1.0");
+
+using var loggerFactory = LoggerFactory.Create(builder =>
+{
+    builder.AddOpenTelemetry(options =>
+    {
+        options.SetResourceBuilder(appResourceBuilder);
+        options.AddOtlpExporter(option =>
+        {
+            option.Endpoint = new Uri("http://otel-collector:4317");
+        });
+    });
+});
+
+var logger = loggerFactory.CreateLogger<Program>();
+
+logger.LogDebug("This is a debug message from dotnet-web-simple", LogLevel.Debug);
+logger.LogInformation("Information messages from dotnet-web-simple are used to provide contextual information", LogLevel.Information);
+logger.LogError(new Exception("Application exception"), "dotnet-web-simple ==> These are usually accompanied by an exception");
+
 app.Run();

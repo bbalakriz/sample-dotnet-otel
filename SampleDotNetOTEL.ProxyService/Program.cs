@@ -33,7 +33,6 @@ builder.Services.AddHttpClient<BusinessServiceClient>(c =>
     c.BaseAddress = new Uri(urls[Random.Shared.Next(urls.Length)]);
 });
 
-builder.Services.AddSingleton<MessageBroker>();
 
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(b =>
@@ -46,7 +45,6 @@ builder.Services.AddOpenTelemetry()
             o.Filter = ctx => ctx.Request.Path != "/metrics";
         })
         .AddHttpClientInstrumentation()
-        .AddSource(MessageBroker.TraceActivityName)
         .AddOtlpExporter())
     .WithMetrics(b => b
         .AddAspNetCoreInstrumentation(o =>
@@ -56,8 +54,21 @@ builder.Services.AddOpenTelemetry()
         .AddHttpClientInstrumentation()
         .AddRuntimeInstrumentation()
         .AddProcessInstrumentation()
-        .AddPrometheusExporter())
+        .AddPrometheusExporter()
+        .AddOtlpExporter())
     .StartWithHost();
+
+builder.Host
+    .ConfigureLogging(logging => logging
+        .ClearProviders()
+        .AddOpenTelemetry(options =>
+        {
+            // Export the body of the message
+            options.IncludeFormattedMessage = true;
+            // Configure the resource attribute `service.name` to MyServiceName
+            options.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(builder.Configuration["ServiceName"]!));
+            options.AddOtlpExporter();
+        }));
 
 var app = builder.Build();
 

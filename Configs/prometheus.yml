@@ -13,5 +13,3 @@ scrape_configs:
       - targets:
           - proxy-service:80
           - business-service-1:80
-          - business-service-2:80
-          - business-service-3:80

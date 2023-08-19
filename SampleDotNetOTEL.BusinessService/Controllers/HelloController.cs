@@ -7,26 +7,53 @@ namespace SampleDotNetOTEL.BusinessService.Controllers;
 [Route("[controller]")]
 public class HelloController : ControllerBase
 {
-    private readonly ErrorResponsePolicy _errorResponsePolicy;
+    private readonly ILogger logger;
 
-    public HelloController(ErrorResponsePolicy errorResponsePolicy)
+    public HelloController(ILoggerFactory logFactory) 
     {
-        _errorResponsePolicy = errorResponsePolicy;
+        logger = logFactory.CreateLogger<HelloController>();
     }
 
     [HttpGet]
     public IActionResult Get()
     {
-        if (_errorResponsePolicy.IsProduceError())
-            return StatusCode(500);
+        logger.LogInformation("some extra logging");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        logger.LogInformation("********************************");
+        
         return Ok("Hello World");
     }
     
     [HttpPost]
     public IActionResult Post([FromBody] HelloRequest request)
     {
-        if (_errorResponsePolicy.IsProduceError())
-            return StatusCode(500);
         return Ok($"Hello {request.Name}");
     }
     
