@@ -58,5 +58,5 @@ service:
       exporters: [ prometheus, logging ]
     logs:
       receivers: [ otlp ]
-      processors: [ resource ]
+      # processors: [ resource ]
       exporters: [ loki, logging ]

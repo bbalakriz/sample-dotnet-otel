@@ -1,5 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics.Metrics;
+using System.Diagnostics;
+using OpenTelemetry.Resources;
 
 namespace SampleDotNetOTEL.BusinessService.Controllers;
 
@@ -7,46 +10,30 @@ namespace SampleDotNetOTEL.BusinessService.Controllers;
 [Route("[controller]")]
 public class HelloController : ControllerBase
 {
-    private readonly ILogger logger;
 
-    public HelloController(ILoggerFactory logFactory) 
+    private ILoggerFactory _Factory;
+    private ILogger _Logger;
+
+    //set by dependency injection
+    public HelloController(ILoggerFactory factory, ILogger logger)
     {
-        logger = logFactory.CreateLogger<HelloController>();
+        _Factory = factory;
+        _Logger = logger;
     }
 
     [HttpGet]
     public IActionResult Get()
     {
-        logger.LogInformation("some extra logging");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
-        logger.LogInformation("********************************");
+        var loggerFromDI = _Factory.CreateLogger("Hello");            
+        _Logger.LogDebug("From direct dependency injection");
+        loggerFromDI.LogDebug("From dependency injection factory");
+
+        _Logger.LogInformation("Some extra logging");
+        _Logger.LogInformation("********INFO************************");
+        _Logger.LogInformation("********************************");
+        _Logger.LogInformation("********************************");
+        _Logger.LogInformation("********************************");
+        loggerFromDI.LogDebug("*********DEBUG***********************");
         
         return Ok("Hello World");
     }

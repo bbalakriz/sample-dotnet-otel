@@ -62,30 +62,30 @@ services:
     networks:
       - backend
 
-  proxy-service:
-    build:
-      dockerfile: SampleDotNetOTEL.ProxyService/Dockerfile
-      context: .
-    image: sample-dotnet-otel-proxy-service
-    environment:
-      - ServiceName=proxy-service
-      - BusinessServiceBaseUrl=http://business-service-1;http://business-service-1;http://business-service-1;
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-    ports:
-      - "127.0.0.1:8080:80"
-    networks:
-      - backend
+  # proxy-service:
+  #   build:
+  #     dockerfile: SampleDotNetOTEL.ProxyService/Dockerfile
+  #     context: .
+  #   image: sample-dotnet-otel-proxy-service
+  #   environment:
+  #     - ServiceName=proxy-service
+  #     - BusinessServiceBaseUrl=http://business-service-1;http://business-service-1;http://business-service-1;
+  #     - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+  #   ports:
+  #     - "127.0.0.1:8080:80"
+  #   networks:
+  #     - backend
   
-  business-service-1:
+  business-service:
     build:
       dockerfile: SampleDotNetOTEL.BusinessService/Dockerfile
       context: .
     image: sample-dotnet-otel-business-service
     environment:
-      - ServiceName=business-service-1
+      - ServiceName=business-service
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
     ports:
-      - "127.0.0.1:8081:80"
+      - "127.0.0.1:8080:80"
     networks:
       - backend
   
@@ -95,16 +95,16 @@ services:
       - /bin/sh
       - -c
       - |
-        sleep 5
+        sleep 10
         while true; do
-          curl -s "http://proxy-service/hello" || true
-          curl -s "http://proxy-service/test" || true
-          sleep 0.5
+          curl -s "http://business-service/hello" || true
+          # curl -s "http://proxy-service/hello" || true
+          sleep 10
         done
     networks:
       - backend
-    depends_on:
-      - proxy-service
+    # depends_on:
+    #   - proxy-service
 
 networks:
   backend:
